@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "outDir": "dist",
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "inlineSourceMap": false,
+    "removeComments": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "emitDecoratorMetadata": false,
+    "experimentalDecorators": true,
+    "declaration": true,
+    "lib": [
+      "dom",
+      "es5",
+      "es6"
+    ]
+  },
+  "include": [
+    "./src/*"
+  ]
+}
