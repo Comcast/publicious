@@ -15,7 +15,7 @@
  */
 
 import { PubSub, MediatorChannel } from '../src/publicious';
-import { expect } from 'chai';
+import { expect, AssertionError } from 'chai';
 import * as sinon from 'sinon';
 
 describe('PubSub', () => {
@@ -62,7 +62,7 @@ describe('PubSub', () => {
         // expect(spy.calledWith(args[0], args[1], args[2], args[3])).to.be.true;
     });
 
-    it('should allow unsubscribing during the publish', (done) => {
+    it('should allow unsubscribing during the publish', done => {
         let handlerSpy = sinon.spy();
         let handler = () => {
             // Confirms the unsubscribe happens during a callback
@@ -78,7 +78,7 @@ describe('PubSub', () => {
         }, 0);
     });
 
-    it('should allow unsubscribing during the publish & republish', (done) => {
+    it('should allow unsubscribing during the publish & republish', done => {
         let handler = () => {
             // Confirms the unsubscribe happens during a callback &
             // that the publish also happens on a callback so that
@@ -92,7 +92,7 @@ describe('PubSub', () => {
     });
 
      // TODO:
-    it.skip('should allow prev nodes to unsubscribe during the publish', (done) => {
+    it.skip('should allow prev nodes to unsubscribe during the publish', done => {
         let handlerSpy = sinon.spy();
         let handler = () => {
             // Confirms prev nodes can be removed and everyone still gets
@@ -134,7 +134,7 @@ describe('PubSub', () => {
         expect(pubsub.remove('foo', handlerSpyThree)).to.be.true;
     });
 
-    it('should allow immediate unsubscribing/resubscribing from an interrupted channel', (done) => {
+    it('should allow immediate unsubscribing/resubscribing from an interrupted channel', done => {
         // See inner comment when this fails due to a timeout
         function handler(_: any, channel: MediatorChannel) {
             channel.stopPropagation();
@@ -147,5 +147,77 @@ describe('PubSub', () => {
         pubsub.subscribe("foo", handler, {}, {});
         pubsub.publish("foo", []);
     });
+
+    it('should not throw by default', () => {
+        pubsub.subscribe("foo", () => { throw new Error(); }, {}, {});
+        pubsub.publish("foo");
+    });
+
+    it('should throw with global flag set', done => {
+        let ps2 = new PubSub({ suppressErrors: false });
+        ps2.subscribe("foo", () => { throw new Error(); }, {}, {});
+        try {
+            ps2.publish("foo");
+            done(new Error("test failed due to suppressing an error with flag set to false"));
+        } catch(e) {
+            done();
+        }
+    });
+
+    it('should throw with publish suppress flag set', done => {
+        pubsub.subscribe("foo", () => { throw new Error(); }, {}, {});
+        try {
+            pubsub.publish("foo", { suppressErrors: false });
+            done(new Error("test failed due to suppressing an error with flag set to false"));
+        } catch(e) {
+            done();
+        }
+    });
+
+    it('should not receive publish arg in subscriber', done => {
+        pubsub.subscribe("foo", (arg: any) => {
+            expect(arg).to.not.have.property('suppressErrors');
+            throw new Error("Intentionally thrown error that should not be suppressed");
+        }, {}, {});
+        try {
+            pubsub.publish("foo", { suppressErrors: false });
+            done(new Error("Test failed to recognize setting, thrown error was suppressed"));
+        } catch(e) {
+            if (e instanceof AssertionError) {
+                // Test failed due to chai expect
+                return done(e);
+            }
+            // test passed due to not suppressing an error
+            done();
+        }
+    });
+
+    it('should allow local overrides of the global setting to suppress', done => {
+        var ps2 = new PubSub({ suppressErrors: false });
+
+        ps2.subscribe("foo", () => {
+            throw new Error("Error should not be seen due to being suppressed");
+        }, {}, {});
+
+        try {
+            ps2.publish("foo", { suppressErrors: true });
+            done();
+        } catch(e) {
+            done(e);
+        }
+    });
+
+
+    it('should throw if subscriber function is added twice', done => {
+        pubsub.subscribe("foo", JSON.stringify);
+        try {
+            pubsub.subscribe("foo", JSON.stringify);
+            done(new Error("Subscribe should've thrown"));
+        } catch(e) {
+            done();
+        }
+    });
+
+
 
 });

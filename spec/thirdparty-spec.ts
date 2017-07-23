@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 import { PubSub } from '../src/publicious';
 import { Observable }from "rxjs/Observable"
 import "rxjs/add/observable/fromEventPattern";
@@ -66,7 +66,7 @@ describe("Third Party Support", () => {
             pubsub.publish("foo", arg);
         });
 
-        it('should receive error', (done) => {
+        it('should receive error', done => {
             let arg: string = "payload";
             toObservable<string>(pubsub, "foo")
               .withLatestFrom(toObservable<string>(pubsub, "bar")
