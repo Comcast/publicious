@@ -24,7 +24,7 @@ const hasOwnProperty = Object.prototype.hasOwnProperty;
 class Subscription {
     public id: string;
 
-    constructor(public fn: Function, public context: Object) {
+    constructor(public fn: Function, public context: Object | null | undefined) {
         this.id = Subscription.hashFn(fn);
     }
 
@@ -61,7 +61,7 @@ class DLLNode {
     public next: DLLNode | null = null;
     public subscription: Subscription;
 
-    constructor(subscriptionFn: Function, context: Object, public priority: number) {
+    constructor(subscriptionFn: Function, context: Object | null | undefined, public priority: number) {
         this.subscription = new Subscription(subscriptionFn, context);
     }
 }
@@ -103,15 +103,40 @@ class Channel implements MediatorChannel {
     public stopPropagation: Function;
 
 
-    public publish(args: Array<any>): void {
+    public publish(args: Array<any>): Promise<undefined> | undefined {
         let node: DLLNode | null | undefined = null;
         let idx: number = 0;
+        let caughtError: Error | undefined = undefined;
+        let lastArg = args[args.length -1] || {};
+        let suppressErrors: boolean = lastArg.suppressErrors != false;
         if (this._commandMask & this.PUBLISHING) {
-            setTimeout(this.publish.bind(this), 0, args);
-            return;
+            if (suppressErrors) {
+                setTimeout(this.publish.bind(this), 0, args);
+                return;
+            }
+            return new Promise<undefined>((resolve, reject) => {
+                setTimeout(() => {
+                    try {
+                        this.publish.bind(this);
+                        resolve();
+                    } catch(e) {
+                        reject(e);
+                    }
+                }, 0, args);
+            });
         }
+        // Prepare the args object to be passed to the subscribers now that we
+        // know we won't be async publishing.
+        if (hasOwnProperty.call(lastArg, "suppressErrors")) {
+            args.pop();
+        }
+        args.push(this);
         this._commandMask |= this.PUBLISHING;
         for (; idx < this._priorityMatrix.length; idx++) {
+            // TODO: May move the interrupt to outside the while loop
+            // so that we can guarentee all priorities are called
+            // even if they get an interrupt. That way subscriber order will
+            // have even less impact.
             node = this._priorityMatrix[idx];
             while(node) {
                 if (this._commandMask & this.SIG_INT) {
@@ -119,16 +144,15 @@ class Channel implements MediatorChannel {
                     return;
                 }
                 this._callingNode = node;
-                // TODO(estobbart): We don't allow the publish to be interrupted
-                // here, this may not be the most ideal situation. We may
-                // want to continue publishing without intervention (setTimeout),
-                // or be able to continue where we left off through an API called
-                // by the handler.
-                // May mean an additional flag to be set, etc.
-                // Something like.. pubsub.continue(channelName, data);
+                // NOTE(estobbart): We don't allow the publish to be
+                // interrupted here, ever. In all cases we keep a reference to the
+                // last thrown error, and if the flag is set to not
+                // suppressErrors then we throw the last caught error before
+                // letting the function return.
                 try {
-                    node.subscription.applyToCallback(args.concat(this));
+                    node.subscription.applyToCallback(args);
                 } catch(err) {
+                    caughtError = err;
                     console.error("Publish error <" + err + "> from subscriber - " + node.subscription);
                 }
                 this._callingNode = null;
@@ -136,9 +160,12 @@ class Channel implements MediatorChannel {
             }
         }
         this._commandMask &= this.CLEAR_BITS;
+        if (caughtError && !suppressErrors) {
+            throw caughtError;
+        }
     }
 
-    public subscribe(fn: Function, priority: number, context: Object): void {
+    public subscribe(fn: Function, priority: number, context: Object | null | undefined): void {
         let node: DLLNode = new DLLNode(fn, context, priority);
         let last: DLLNode;
 
@@ -277,13 +304,17 @@ export interface SubPriority {
     priority?: number;
 }
 
+export interface PublishOptions {
+    suppressErrors?: boolean;
+}
+
 export class PubSub {
 
     private _channels: { [x: string]: Channel } = Object.create(null);
 
-    constructor() {
+    constructor(public publishOptions: PublishOptions = { suppressErrors: true }) {
         if (!(this instanceof PubSub)) {
-            return new PubSub();
+            return new PubSub(publishOptions);
         }
     }
 
@@ -296,12 +327,11 @@ export class PubSub {
     public trigger: Function;
 
     // TODO: Be nice to be able to do something like fn: (...args, channel: Channel): void
-    public subscribe(channelName: string, fn: Function, priority: SubPriority, context: Object): SubResposne {
+    public subscribe(channelName: string, fn: Function, priority?: SubPriority, context?: Object | null | undefined): SubResposne {
         let suggestedPriority: number;
         if (!hasOwnProperty.call(this._channels, channelName)) {
             this._channels[channelName] = new Channel(channelName);
         }
-        // TODO: Which parts of this check will TypeScript do for me..
         suggestedPriority = priority && typeof priority.priority === "number" ? priority.priority : 4;
         this._channels[channelName].subscribe(fn, Math.max(0, Math.min(suggestedPriority, 4)), context);
 
@@ -327,12 +357,15 @@ export class PubSub {
         return didUnsubscribe;
     }
 
-    public publish(channelName: string, ...args: any[]): void;
+    public publish(channelName: string, ...args: any[]): Promise<undefined> | undefined;
 
-    public publish(channelName: string): void {
+    public publish(channelName: string): Promise<undefined> | undefined {
         if (hasOwnProperty.call(this._channels, channelName)) {
             let args: Array<any> = Array.prototype.slice.call(arguments, 1);
-            this._channels[channelName].publish(args);
+            if (!hasOwnProperty.call(args[args.length -1] || {}, "suppressErrors")) {
+                args.push(this.publishOptions);
+            }
+            return this._channels[channelName].publish(args);
         }
     }
 }
