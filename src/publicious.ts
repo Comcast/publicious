@@ -151,9 +151,12 @@ class Channel implements MediatorChannel {
                 // letting the function return.
                 try {
                     node.subscription.applyToCallback(args);
-                } catch(err) {
+                } catch (err) {
                     caughtError = err;
-                    console.error("Publish error <" + err + "> from subscriber - " + node.subscription);
+                    console.error("Publish channel:" + this.namespace + " error <" + err + "> from subscriber - " + node.subscription);
+                    if (err.stack) {
+                        console.error("StackTrace:\n" + err.stack);
+                    }
                 }
                 this._callingNode = null;
                 node = node.next;
