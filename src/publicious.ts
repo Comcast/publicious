@@ -107,8 +107,8 @@ class Channel implements MediatorChannel {
         let node: DLLNode | null | undefined = null;
         let idx: number = 0;
         let caughtError: Error | undefined = undefined;
-        let lastArg = args[args.length -1] || {};
-        let suppressErrors: boolean = lastArg.suppressErrors != false;
+        const lastArg = args[args.length -1] || {};
+        const suppressErrors: boolean = lastArg.suppressErrors != false;
         if (this._commandMask & this.PUBLISHING) {
             if (suppressErrors) {
                 setTimeout(this.publish.bind(this), 0, args);
@@ -169,7 +169,7 @@ class Channel implements MediatorChannel {
     }
 
     public subscribe(fn: () => void, priority: number, context: Object | null | undefined): void {
-        let node: DLLNode = new DLLNode(fn, context, priority);
+        const node: DLLNode = new DLLNode(fn, context, priority);
         let last: DLLNode;
 
         if (!hasOwnProperty.call(this._fnHashMap, node.subscription.id)) {
@@ -220,7 +220,7 @@ class Channel implements MediatorChannel {
         // TODO: We could optimize a little here, since we sometimes hash a
         // function twice, we could allow this to be called with a node also,
         // which has already had it's function hashed.
-        let id: string = Subscription.hashFn(fn);;
+        const id: string = Subscription.hashFn(fn);;
         let fnArray: Array<DLLNode> | null = null;
         let node: DLLNode | null = null;
         let idx: number = 0;
@@ -365,7 +365,7 @@ export class PubSub {
 
     public publish(channelName: string): Promise<undefined> | undefined {
         if (hasOwnProperty.call(this._channels, channelName)) {
-            let args: Array<any> = Array.prototype.slice.call(arguments, 1);
+            const args: Array<any> = Array.prototype.slice.call(arguments, 1);
             if (!hasOwnProperty.call(args[args.length -1] || {}, "suppressErrors")) {
                 args.push(this.publishOptions);
             }
