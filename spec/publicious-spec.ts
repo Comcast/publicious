@@ -175,6 +175,7 @@ describe('PubSub', () => {
         } catch(e) {
             resolve();
         }
+      });
     });
 
     it('should not receive publish arg in subscriber', done => {
