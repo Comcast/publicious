@@ -222,9 +222,10 @@ describe('PubSub', () => {
         try {
             pubsub.subscribe("foo", JSON.stringify);
             reject(new Error("Subscribe should've thrown"));
-        } catch(e) {
+            } catch(e) {
             resolve();
-        }
+            }
+        });
     });
 
 
