@@ -229,6 +229,7 @@ describe('PubSub', () => {
         } catch(e) {
             resolve();
         }
+     });
     });
 
 
