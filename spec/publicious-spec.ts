@@ -207,6 +207,12 @@ describe('PubSub', () => {
         }
     });
 
+    it("should fail", () => {
+    return new Promise((resolve, reject) => {
+        reject();
+    });
+    });
+
 
     it('should throw if subscriber function is added twice', done => {
         pubsub.subscribe("foo", JSON.stringify);
