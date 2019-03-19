@@ -153,15 +153,17 @@ describe('PubSub', () => {
         pubsub.publish("foo");
     });
 
-    it('should throw with global flag set', done => {
+    it.only('should throw with global flag set', () => {
         let ps2 = new PubSub({ suppressErrors: false });
         ps2.subscribe("foo", () => { throw new Error(); }, {}, {});
-        try {
-            ps2.publish("foo");
-            done(new Error("test failed due to suppressing an error with flag set to false"));
-        } catch(e) {
-            done();
-        }
+        return new Promise((resolve, reject) => {
+            try {
+                ps2.publish("foo");
+                reject(new Error("test failed due to suppressing an error with flag set to false"));
+            } catch(e) {
+                resolve();
+            }
+        });
     });
 
     it('should throw with publish suppress flag set', done => {
