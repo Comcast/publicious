@@ -173,10 +173,10 @@ describe('PubSub', () => {
         try {
             pubsub.publish("foo", { suppressErrors: false });
             reject(new Error("test failed due to suppressing an error with flag set to false"));
-        } catch(e) {
+            } catch(e) {
             resolve();
-        }
-      });
+            }
+       });
     });
 
     it('should not receive publish arg in subscriber', done => {
