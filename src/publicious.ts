@@ -29,7 +29,7 @@ class Subscription {
     }
 
     static hashFn(fn: Function): string {
-        return Subscription.hashStr(fn.toString().replace(/\s/g,''));
+        return Subscription.hashStr(fn.toString().replace(/\s/g," "));
     }
 
     static hashStr(str: string): string {
@@ -66,7 +66,6 @@ class DLLNode {
     }
 }
 
-
 export interface MediatorChannel {
     stopPropagation: Function;
 }
@@ -101,7 +100,6 @@ class Channel implements MediatorChannel {
 
     // Mediator backwards compatibility
     public stopPropagation: Function;
-
 
     public publish(args: Array<any>): Promise<undefined> | undefined {
         let node: DLLNode | null | undefined = null;
@@ -296,7 +294,6 @@ Channel.prototype.PUBLISHING = 0x02;
 
 // Mediator backwards compatibility
 Channel.prototype.stopPropagation = Channel.prototype.interrupt;
-
 
 export interface SubResposne {
     channel: MediatorChannel;
