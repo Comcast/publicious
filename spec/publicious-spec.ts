@@ -168,15 +168,18 @@ describe('PubSub', () => {
 
 
     it.only('should throw with publish suppress flag set', () => {
+        let pubsub = new PubSub({ suppressErrors: false });
         pubsub.subscribe("foo", () => { throw new Error(); }, {}, {});
         return new Promise((resolve, reject) => {
         try {
             pubsub.publish("foo", { suppressErrors: false });
             reject(new Error("test failed due to suppressing an error with flag set to false"));
-        } catch(e) {
+            } catch(e) {
             resolve();
-        }
+            }
+        });
     });
+
 
     it('should not receive publish arg in subscriber', done => {
         pubsub.subscribe("foo", (arg: any) => {
