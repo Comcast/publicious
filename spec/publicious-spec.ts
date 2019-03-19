@@ -208,9 +208,9 @@ describe('PubSub', () => {
     });
 
     it("should fail", () => {
-    return new Promise((resolve, reject) => {
-        reject();
-    });
+        return new Promise((_, reject) => {
+            reject("put reason here");
+        });
     });
 
 
