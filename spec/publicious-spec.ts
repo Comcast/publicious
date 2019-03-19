@@ -167,7 +167,7 @@ describe('PubSub', () => {
     });
 
     it.only('should throw with publish suppress flag set', () => {
-        let pubsub = new PubSub({ suppressErrors: false });
+        let pubsub = new PubSub({ suppressErrors: false });//check this
         pubsub.subscribe("foo", () => { throw new Error(); }, {}, {});
         return new Promise((resolve,reject)) => {
         try {
