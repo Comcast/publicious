@@ -167,7 +167,7 @@ describe('PubSub', () => {
     });
 
 
-    it.only('should throw with publish suppress flag set', () => {
+    it('should throw with publish suppress flag set', () => {
         let pubsub = new PubSub({ suppressErrors: false });
         pubsub.subscribe("foo", () => { throw new Error(); }, {}, {});
         return new Promise((resolve, reject) => {
@@ -215,13 +215,15 @@ describe('PubSub', () => {
     });
 
 
-    it('should throw if subscriber function is added twice', done => {
+    it.only('should throw if subscriber function is added twice', () => {
+        let pubsub = new PubSub({ suppressErrors: false });
         pubsub.subscribe("foo", JSON.stringify);
+        return new Promise((resolve, reject) => {
         try {
             pubsub.subscribe("foo", JSON.stringify);
-            done(new Error("Subscribe should've thrown"));
+            reject(new Error("Subscribe should've thrown"));
         } catch(e) {
-            done();
+            resolve();
         }
     });
 
