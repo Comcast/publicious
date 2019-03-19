@@ -24,11 +24,11 @@ const hasOwnProperty = Object.prototype.hasOwnProperty;
 class Subscription {
     public id: string;
 
-    constructor(public fn: Function, public context: Object | null | undefined) {
+    constructor(public fn: () => void, public context: Object | null | undefined) {
         this.id = Subscription.hashFn(fn);
     }
 
-    static hashFn(fn: Function): string {
+    static hashFn(fn: () => void): string {
         return Subscription.hashStr(fn.toString().replace(/\s/g,''));
     }
 
@@ -67,8 +67,8 @@ class DLLNode {
 }
 
 
-export interface MediatorChannel {
-    stopPropagation: Function;
+export interface IMediatorChannel {
+    stopPropagation: () => void;
 }
 
 /**
@@ -100,7 +100,7 @@ class Channel implements MediatorChannel {
     }
 
     // Mediator backwards compatibility
-    public stopPropagation: Function;
+    public stopPropagation: () => void;
 
 
     public publish(args: Array<any>): Promise<undefined> | undefined {
@@ -168,7 +168,7 @@ class Channel implements MediatorChannel {
         }
     }
 
-    public subscribe(fn: Function, priority: number, context: Object | null | undefined): void {
+    public subscribe(fn: () => void, priority: number, context: Object | null | undefined): void {
         let node: DLLNode = new DLLNode(fn, context, priority);
         let last: DLLNode;
 
@@ -215,7 +215,8 @@ class Channel implements MediatorChannel {
         }
     }
 
-    public unsubscribe(fn: Function): boolean {
+    public unsubscribe(fn: () => void
+    ): boolean {
         // TODO: We could optimize a little here, since we sometimes hash a
         // function twice, we could allow this to be called with a node also,
         // which has already had it's function hashed.
@@ -298,16 +299,16 @@ Channel.prototype.PUBLISHING = 0x02;
 Channel.prototype.stopPropagation = Channel.prototype.interrupt;
 
 
-export interface SubResposne {
+export interface ISubResponse {
     channel: MediatorChannel;
-    fn: Function;
+    fn: () => void;
 }
 
-export interface SubPriority {
+export interface ISubPriority {
     priority?: number;
 }
 
-export interface PublishOptions {
+export interface IPublishOptions {
     suppressErrors?: boolean;
 }
 
@@ -322,15 +323,15 @@ export class PubSub {
     }
 
     // Mediator backwards compatibility
-    public off: Function;
-    public remove: Function;
-    public on: Function;
-    public bind: Function;
-    public emit: Function;
-    public trigger: Function;
+    public off: () => void;
+    public remove: () => void;
+    public on: () => void;
+    public bind: () => void;
+    public emit: () => void;
+    public trigger: () => void;
 
     // TODO: Be nice to be able to do something like fn: (...args, channel: Channel): void
-    public subscribe(channelName: string, fn: Function, priority?: SubPriority, context?: Object | null | undefined): SubResposne {
+    public subscribe(channelName: string, fn: () => void, priority?: SubPriority, context?: Object | null | undefined): SubResposne {
         let suggestedPriority: number;
         if (!hasOwnProperty.call(this._channels, channelName)) {
             this._channels[channelName] = new Channel(channelName);
@@ -340,17 +341,17 @@ export class PubSub {
 
         // Mediator backwards compatibility
         // Mediator-js returns the subscriber here which has a channel property
-        // which you can then get the namespace from, and the original function passed in.
+        // which you can then get the namespace from, and the original () => void passed in.
         return {
             channel: this._channels[channelName],
             fn: fn
         };
     }
 
-    public unsubscribe(channelName: string, fn: Function): boolean {
+    public unsubscribe(channelName: string, fn: () => void): boolean {
         // TODO: Mediator has this way of unsubscribing to everything in a channel
         let didUnsubscribe = false;
-        if (hasOwnProperty.call(this._channels, channelName) && typeof fn === "function") {
+        if (hasOwnProperty.call(this._channels, channelName) && typeof fn === "() => void") {
             // TODO(estobb200): Memory leak here, see issue # 4
             didUnsubscribe = this._channels[channelName].unsubscribe(fn);
             if (didUnsubscribe && !this._channels[channelName].hasSubscribers()) {
