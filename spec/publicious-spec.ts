@@ -153,25 +153,30 @@ describe('PubSub', () => {
         pubsub.publish("foo");
     });
 
-    it('should throw with global flag set', done => {
+    it('should throw with global flag set', () => {
         let ps2 = new PubSub({ suppressErrors: false });
         ps2.subscribe("foo", () => { throw new Error(); }, {}, {});
-        try {
-            ps2.publish("foo");
-            done(new Error("test failed due to suppressing an error with flag set to false"));
-        } catch(e) {
-            done();
-        }
+        return new Promise((resolve, reject) => {
+            try {
+                ps2.publish("foo");
+                reject(new Error("test failed due to suppressing an error with flag set to false"));
+            } catch(e) {
+                resolve();
+            }
+        });
     });
 
-    it('should throw with publish suppress flag set', done => {
+    it('should throw with publish suppress flag set', () => {
+        let pubsub = new PubSub({ suppressErrors: false });
         pubsub.subscribe("foo", () => { throw new Error(); }, {}, {});
+        return new Promise((resolve, reject) => {
         try {
             pubsub.publish("foo", { suppressErrors: false });
-            done(new Error("test failed due to suppressing an error with flag set to false"));
-        } catch(e) {
-            done();
-        }
+            reject(new Error("test failed due to suppressing an error with flag set to false"));
+            } catch(e) {
+            resolve();
+            }
+       });
     });
 
     it('should not receive publish arg in subscriber', done => {
@@ -208,16 +213,18 @@ describe('PubSub', () => {
     });
 
 
-    it('should throw if subscriber function is added twice', done => {
+    it('should throw if subscriber function is added twice', () => {
+        let pubsub = new PubSub({ suppressErrors: false });
         pubsub.subscribe("foo", JSON.stringify);
+        return new Promise((resolve, reject) => {
         try {
             pubsub.subscribe("foo", JSON.stringify);
-            done(new Error("Subscribe should've thrown"));
+            reject(new Error("Subscribe should've thrown"));
         } catch(e) {
-            done();
+            resolve();
         }
+     });
     });
-
 
 
 });
