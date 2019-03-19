@@ -212,12 +212,6 @@ describe('PubSub', () => {
         }
     });
 
-        it("should fail", () => {
-        return new Promise((resolve) => {
-            resolve();
-        });
-    });
-
 
     it('should throw if subscriber function is added twice', () => {
         let pubsub = new PubSub({ suppressErrors: false });
