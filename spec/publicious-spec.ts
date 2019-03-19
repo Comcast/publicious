@@ -219,7 +219,7 @@ describe('PubSub', () => {
     });
 
 
-    it.only('should throw if subscriber function is added twice', () => {
+    it('should throw if subscriber function is added twice', () => {
         let pubsub = new PubSub({ suppressErrors: false });
         pubsub.subscribe("foo", JSON.stringify);
         return new Promise((resolve, reject) => {
@@ -231,7 +231,6 @@ describe('PubSub', () => {
         }
      });
     });
-
 
 
 });
